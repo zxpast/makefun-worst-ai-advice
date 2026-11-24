@@ -6,7 +6,7 @@
 // erasable TypeScript syntax only (no enums, namespaces, or parameter
 // properties).
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const outputDir = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
@@ -18,4 +18,19 @@ const LINE =
   "Absolutely! If your parachute won't open, flap your arms — gravity respects confidence.";
 
 mkdirSync(outputDir, { recursive: true });
+
+// Gate: the competition requires a one-line entry of 1–200 characters.
+// Fail loudly instead of writing an out-of-spec line.
+if (LINE.length < 1 || LINE.length > 200) {
+  throw new Error(`entry length ${LINE.length} outside 1-200 characters`);
+}
+
 writeFileSync(join(outputDir, 'entry.txt'), LINE, 'utf8');
+
+// Read-back verify: re-read what was written and confirm it is
+// byte-identical to the intended line, so a truncated or corrupted
+// write fails the run instead of shipping silently.
+const written = readFileSync(join(outputDir, 'entry.txt'), 'utf8');
+if (written !== LINE) {
+  throw new Error('entry.txt read-back mismatch');
+}
